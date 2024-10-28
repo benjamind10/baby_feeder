@@ -1,27 +1,40 @@
-use chrono::NaiveDate;
-use rusqlite::{params, Connection, Result};
+use chrono::{Local, NaiveDate, NaiveDateTime};
+use rusqlite::{params, types::Type, Connection, Result};
 
-/// Struct representing a daily feeding record
+/// Structure representing a feeding record.
 #[derive(Debug)]
 pub struct FeedingRecord {
-    pub date: NaiveDate,
+    pub datetime: NaiveDateTime,
     pub amount: f32,
 }
 
-/// Retrieves all feeding records for a specific day.
-pub fn get_feedings(conn: &Connection, date: NaiveDate) -> Result<Vec<FeedingRecord>> {
-    let date_str = date.to_string();
-    let mut stmt = conn.prepare("SELECT date, amount FROM feedings WHERE date = ?1")?;
+/// Shows feeding records for today or a specified date.
+pub fn show_records(conn: &Connection, date: Option<String>) -> Result<()> {
+    let target_date = match date {
+        Some(date_str) => NaiveDate::parse_from_str(&date_str, "%m/%d/%Y")
+            .map_err(|e| rusqlite::Error::FromSqlConversionFailure(0, Type::Text, Box::new(e)))?,
+        None => Local::now().naive_local().date(),
+    };
 
-    let feedings_iter = stmt.query_map(params![date_str], |row| {
-        let date_str: String = row.get(0)?;
-        let date = NaiveDate::parse_from_str(&date_str, "%Y-%m-%d").map_err(|e| {
-            rusqlite::Error::FromSqlConversionFailure(0, rusqlite::types::Type::Text, Box::new(e))
-        })?;
-        let amount = row.get(1)?;
-        Ok(FeedingRecord { date, amount })
+    let date_str = target_date.to_string();
+    let mut stmt = conn.prepare("SELECT datetime, amount FROM feedings WHERE datetime LIKE ?1")?;
+    let feedings_iter = stmt.query_map(params![format!("{}%", date_str)], |row| {
+        let datetime: String = row.get(0)?;
+        let amount: f32 = row.get(1)?;
+        let datetime = NaiveDateTime::parse_from_str(&datetime, "%Y-%m-%d %H:%M:%S")
+            .map_err(|e| rusqlite::Error::FromSqlConversionFailure(0, Type::Text, Box::new(e)))?;
+        Ok(FeedingRecord { datetime, amount })
     })?;
 
-    let feedings: Vec<FeedingRecord> = feedings_iter.collect::<Result<_, _>>()?;
-    Ok(feedings)
+    println!("Feedings for {}:", target_date);
+    for feeding in feedings_iter {
+        let feeding = feeding?;
+        println!(
+            "{} - {} oz",
+            feeding.datetime.format("%Y-%m-%d %H:%M"),
+            feeding.amount
+        );
+    }
+
+    Ok(())
 }
