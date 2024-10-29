@@ -101,13 +101,10 @@ cargo run -- add --amount 5.5
 cargo run -- add --amount 4.0 --datetime "10/28/2024 15:30"
 
 # Show all feeding records for today
-cargo run -- records
+cargo run -- total
 
 # Show all feeding records for October 28, 2024
-cargo run -- records --date "10/28/2024"
-
-# Show the total amount fed today
-cargo run -- total
+cargo run -- total --date "10/28/2024"
 ```
 
 ## Contributing
