@@ -1,17 +1,16 @@
-
 { pkgs ? import <nixpkgs> {} }:
 
 pkgs.mkShell {
   buildInputs = [
-    pkgs.neovim                # Neovim
-    pkgs.rust-analyzer         # rust-analyzer for Rust LSP
-    pkgs.rustc                 # Rust compiler
-    pkgs.cargo                 # Cargo package manager
-    pkgs.nodejs                # Required for some LSP tools
+    pkgs.rustup       # Rust toolchain manager
+    pkgs.sqlite       # SQLite command line tool
+    pkgs.openssl      # Needed for many crates
+    pkgs.pkg-config   # Helps with linking libraries
   ];
 
+  # Initializes Rust toolchain within the shell
   shellHook = ''
-    export PATH=$PATH:${pkgs.rustc}/bin:${pkgs.cargo}/bin:${pkgs.rust-analyzer}/bin
+    rustup default stable
+    rustup target add x86_64-unknown-linux-gnu
   '';
 }
-

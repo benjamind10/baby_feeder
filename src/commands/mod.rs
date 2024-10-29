@@ -1,2 +1,3 @@
 pub mod add;
-pub mod total;
+pub mod delete;
+pub mod totals;

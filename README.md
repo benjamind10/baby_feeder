@@ -53,7 +53,7 @@ Date Format: The date-time format for `--datetime` is `MM/DD/YYYY HH:MM`.
 
 ### 2. Show Feeding Records
 
-To view feeding records, use the records command. You can view today’s records or records for a specific date.
+To view feeding records, use the `total` command. You can view today’s records or records for a specific date.
 
 **Example for today’s records:**
 
@@ -68,6 +68,15 @@ cargo run -- total --date "10/28/2024"
 ```
 Date Format: The date-time format for `--datetime` is `MM/DD/YYYY`.
 
+### 3. Delete Feeding Record
+
+To delete a feedng record, use the `delete` command, You can view records for a today or a specific date with the `total` command.
+- Find the ID of the record to delete.
+- Run the delete command with the ID to delete.
+
+```bash
+cargo run -- delete <id>
+```
 
 ## Database Structure
 
