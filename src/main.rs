@@ -4,7 +4,7 @@ use std::error::Error;
 
 // Import commands module
 mod commands;
-use commands::{add::add_feeding, records::show_records, total::show_total_today};
+use commands::{add::add_feeding, total::show_total};
 
 /// CLI Arguments for the feeding tracker application
 #[derive(Parser)]
@@ -25,11 +25,9 @@ enum Commands {
         #[arg(short, long)]
         datetime: Option<String>,
     },
-    /// Show total feeding amount for today
-    Total,
-    /// Show all feeding records for today or a specified date
-    Records {
-        /// Date to retrieve records for (format: MM/DD/YYYY)
+    /// Show total feeding amount for today or a specified date
+    Total {
+        /// Date to retrieve total feeding for (format: MM/DD/YYYY)
         #[arg(short, long)]
         date: Option<String>,
     },
@@ -48,11 +46,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         Commands::Add { amount, datetime } => {
             add_feeding(&conn, amount, datetime)?;
         }
-        Commands::Total => {
-            show_total_today(&conn)?;
-        }
-        Commands::Records { date } => {
-            show_records(&conn, date)?;
+        Commands::Total { date } => {
+            show_total(&conn, date)?;
         }
     }
 

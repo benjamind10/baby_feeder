@@ -1,19 +1,31 @@
-use crate::commands::records::FeedingRecord;
-use chrono::{Local, NaiveDateTime};
+use chrono::{Local, NaiveDate, NaiveDateTime};
 use rusqlite::{params, types::Type, Connection, Result};
 
-/// Shows the total amount of feeding for today, along with each record's ID.
-pub fn show_total_today(conn: &Connection) -> Result<()> {
-    // Get today's date in YYYY-MM-DD format
-    let today = Local::now().naive_local().date();
-    let today_str = today.to_string(); // e.g., "2024-10-28"
+/// Structure representing a feeding record, including the unique ID.
+#[derive(Debug)]
+pub struct FeedingRecord {
+    pub id: i32,
+    pub datetime: NaiveDateTime,
+    pub amount: f32,
+}
 
-    // Prepare the SQL statement to select id, datetime, and amount for today's feedings
+/// Shows feeding records for a specified date or today, along with the total amount fed.
+pub fn show_total(conn: &Connection, date: Option<String>) -> Result<()> {
+    // Determine the target date based on user input or default to today
+    let target_date = match date {
+        Some(date_str) => NaiveDate::parse_from_str(&date_str, "%m/%d/%Y")
+            .map_err(|e| rusqlite::Error::FromSqlConversionFailure(0, Type::Text, Box::new(e)))?,
+        None => Local::now().naive_local().date(),
+    };
+
+    let date_str = target_date.to_string(); // Format: "YYYY-MM-DD"
+
+    // Prepare the SQL statement to select id, datetime, and amount for the target date
     let mut stmt =
         conn.prepare("SELECT id, datetime, amount FROM feedings WHERE datetime LIKE ?1")?;
 
     // Execute the query and map the results to FeedingRecord structs
-    let feedings_iter = stmt.query_map(params![format!("{}%", today_str)], |row| {
+    let feedings_iter = stmt.query_map(params![format!("{}%", date_str)], |row| {
         let id: i32 = row.get(0)?; // Retrieve 'id' from the first column
         let datetime_str: String = row.get(1)?; // Retrieve 'datetime' from the second column
         let amount: f32 = row.get(2)?; // Retrieve 'amount' from the third column
@@ -29,8 +41,8 @@ pub fn show_total_today(conn: &Connection) -> Result<()> {
         })
     })?;
 
-    let mut total_amount = 0.0;
-    println!("Total feedings for today:");
+    let mut total_amount = 0.0; // Initialize total feeding amount
+    println!("Feedings for {}:", target_date);
 
     // Iterate over each feeding record and display its details
     for feeding_result in feedings_iter {
@@ -43,10 +55,11 @@ pub fn show_total_today(conn: &Connection) -> Result<()> {
             feeding.amount
         );
 
-        total_amount += feeding.amount;
+        total_amount += feeding.amount; // Accumulate the total amount
     }
 
-    println!("Total fed today: {} oz", total_amount);
+    // Display the total feeding amount for the target date
+    println!("Total fed on {}: {} oz", target_date, total_amount);
 
     Ok(())
 }

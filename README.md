@@ -58,23 +58,16 @@ To view feeding records, use the records command. You can view today’s records
 **Example for today’s records:**
 
 ```bash
-cargo run -- records
+cargo run -- total
 ```
 
 **Example for records on a specific date:**
 
 ```bash
-cargo run -- records --date "10/28/2024"
+cargo run -- total --date "10/28/2024"
 ```
 Date Format: The date-time format for `--datetime` is `MM/DD/YYYY`.
 
-### 3. Show Total Feeding Amount
-
-To show the total feeding amount for today, use the `total` command. This command displays each feeding record for the day along with a total.
-
-```bash
-cargo run -- total
-```
 
 ## Database Structure
 
