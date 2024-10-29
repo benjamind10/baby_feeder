@@ -1,9 +1,10 @@
 use chrono::{Local, NaiveDate, NaiveDateTime};
 use rusqlite::{params, types::Type, Connection, Result};
 
-/// Structure representing a feeding record.
+/// Structure representing a feeding record, including the unique ID.
 #[derive(Debug)]
 pub struct FeedingRecord {
+    pub id: i32,
     pub datetime: NaiveDateTime,
     pub amount: f32,
 }
@@ -17,20 +18,27 @@ pub fn show_records(conn: &Connection, date: Option<String>) -> Result<()> {
     };
 
     let date_str = target_date.to_string();
-    let mut stmt = conn.prepare("SELECT datetime, amount FROM feedings WHERE datetime LIKE ?1")?;
+    let mut stmt =
+        conn.prepare("SELECT id, datetime, amount FROM feedings WHERE datetime LIKE ?1")?;
     let feedings_iter = stmt.query_map(params![format!("{}%", date_str)], |row| {
-        let datetime: String = row.get(0)?;
-        let amount: f32 = row.get(1)?;
-        let datetime = NaiveDateTime::parse_from_str(&datetime, "%Y-%m-%d %H:%M:%S")
+        let id: i32 = row.get(0)?;
+        let datetime_str: String = row.get(1)?;
+        let amount: f32 = row.get(2)?;
+        let datetime = NaiveDateTime::parse_from_str(&datetime_str, "%Y-%m-%d %H:%M:%S")
             .map_err(|e| rusqlite::Error::FromSqlConversionFailure(0, Type::Text, Box::new(e)))?;
-        Ok(FeedingRecord { datetime, amount })
+        Ok(FeedingRecord {
+            id,
+            datetime,
+            amount,
+        })
     })?;
 
     println!("Feedings for {}:", target_date);
     for feeding in feedings_iter {
         let feeding = feeding?;
         println!(
-            "{} - {} oz",
+            "ID: {} | {} - {} oz",
+            feeding.id,
             feeding.datetime.format("%Y-%m-%d %H:%M"),
             feeding.amount
         );
