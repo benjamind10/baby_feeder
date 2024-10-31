@@ -1,40 +1,18 @@
 
--- Require necessary plugins
-local lspconfig = require("lspconfig")
-local cmp = require("cmp")
-
--- Setup nvim-cmp for autocompletion
-cmp.setup({
-  snippet = {
-    expand = function(args)
-      vim.fn["vsnip#anonymous"](args.body)  -- Adjust if using a different snippet engine
-    end,
-  },
-  mapping = cmp.mapping.preset.insert({
-    ["<C-Space>"] = cmp.mapping.complete(),       -- Manually trigger completion
-    ["<CR>"] = cmp.mapping.confirm({ select = true }), -- Confirm selection with Enter
-    ["<C-e>"] = cmp.mapping.abort(),              -- Abort completion
-  }),
-  sources = cmp.config.sources({
-    { name = "nvim_lsp" },
-    { name = "buffer" },
-  }),
-})
-
--- Setup rust-analyzer with nvim-lspconfig
-local capabilities = require("cmp_nvim_lsp").default_capabilities()
+local lspconfig = require('lspconfig')
 
 lspconfig.rust_analyzer.setup({
-  cmd = { "rust-analyzer" },  -- Assuming rust-analyzer is available in PATH
-  trace = "verbose",
-  capabilities = capabilities,
+  cmd = { "rust-analyzer" },  -- Make sure this is in list form
+  on_attach = function(client, bufnr)
+    -- Optional LSP keybindings
+    local opts = { noremap = true, silent = true }
+    vim.api.nvim_buf_set_keymap(bufnr, 'n', 'gd', '<cmd>lua vim.lsp.buf.definition()<CR>', opts)
+    vim.api.nvim_buf_set_keymap(bufnr, 'n', 'K', '<cmd>lua vim.lsp.buf.hover()<CR>', opts)
+  end,
   settings = {
     ["rust-analyzer"] = {
       cargo = { allFeatures = true },
-      procMacro = { enable = true },
-      checkOnSave = {
-        command = "clippy",
-      },
+      checkOnSave = { command = "clippy" },
     },
   },
 })
