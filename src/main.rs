@@ -74,3 +74,6 @@ fn initialize_db(conn: &Connection) -> Result<()> {
     )?;
     Ok(())
 }
+
+
+// command that will list time between feeding and an average for the day
