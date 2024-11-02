@@ -1,4 +1,4 @@
-use chrono::{Local, NaiveDate, NaiveDateTime};
+use chrono::{Datelike, Local, NaiveDate, NaiveDateTime};
 use rusqlite::{params, types::Type, Connection, Result};
 
 /// Structure representing a feeding record, including the unique ID.
@@ -13,9 +13,21 @@ pub struct FeedingRecord {
 pub fn show_total(conn: &Connection, date: Option<String>) -> Result<()> {
     // Determine the target date based on user input or default to today
     let target_date = match date {
-        Some(date_str) => NaiveDate::parse_from_str(&date_str, "%m/%d/%Y")
-            .map_err(|e| rusqlite::Error::FromSqlConversionFailure(0, Type::Text, Box::new(e)))?,
-        None => Local::now().naive_local().date(),
+        Some(date_str) => {
+            // Check if the year is provided as two digits
+            let formatted_date_str = if date_str.len() == 8 && date_str[6..8].parse::<i32>().is_ok() {
+                // Convert "MM/DD/YY" to "MM/DD/20YY"
+                let (month_day, year_suffix) = date_str.split_at(6);
+                format!("{}20{}", month_day, year_suffix)
+            } else {
+                date_str
+            };
+
+            // Now parse the adjusted date string as a four-digit year
+            NaiveDate::parse_from_str(&formatted_date_str, "%m/%d/%Y")
+                .map_err(|e| rusqlite::Error::FromSqlConversionFailure(0, Type::Text, Box::new(e)))?
+        }
+        None => Local::now().naive_local().date(), // Default to today's date
     };
 
     let date_str = target_date.to_string(); // Format: "YYYY-MM-DD"
